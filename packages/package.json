@@ -1,0 +1,14 @@
+{
+  "name": "code",
+  "version": "1.0.0",
+  "description": "connected to Google Calendar, show your busy time directly in a calendar",
+  "main": "index.js",
+  "scripts": {
+    "start": "index.js"
+  },
+  "author": "freschetto",
+  "license": "ISC",
+  "dependencies": {
+    "http-server": "^14.1.1"
+  }
+}
