@@ -5,6 +5,20 @@
   <head>
     <title>Google Calendar API Quickstart</title>
     <meta charset="utf-8" />
+    <style>
+      table {
+          width: 100%;
+          border-collapse: collapse;
+      }
+      th, td {
+          border: 1px solid black;
+          padding: 8px;
+          text-align: center;
+      }
+      th {
+          background-color: #f2f2f2;
+      }
+    </style>
   </head>
 
   <body>
@@ -16,6 +30,31 @@
 
     <pre id = "busy" style = "white-space: pre-wrap;"></pre>
     <pre id = "events" style = "white-space: pre-wrap;"></pre>
+
+    <table>
+      <tr>
+          <th>Orario</th>
+          <th>Lunedì</th>
+          <th>Martedì</th>
+          <th>Mercoledì</th>
+          <th>Giovedì</th>
+          <th>Venerdì</th>
+          <th>Sabato</th>
+          <th>Domenica</th>
+      </tr>
+      <script>
+          const orari = ['00:00','01:00','02:00','03:00','04:00','05:00','06:00','07:00','08:00','09:00','10:00','11:00','12:00',
+                         '13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00','24:00'];
+          const tableBody = document.querySelector('table');
+
+          orari.forEach(orario => {
+              let row = `<tr><td>${orario}</td>`;
+              for (let i = 0; i < 7; i++) {row += `<td></td>`;}
+              row += '</tr>';
+              tableBody.innerHTML += row;
+          });
+      </script>
+    </table>
 
     <script type = "text/javascript" src="/script.js"></script>
 

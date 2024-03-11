@@ -91,8 +91,8 @@ function handleSignoutClick() {
 
 async function queryFreeBusy() {
 
-    const timeMin = new Date('2024-03-12T01:00:00Z').toISOString();
-    const timeMax = new Date('2024-03-12T24:00:00Z').toISOString();
+    const timeMin = new Date('2024-03-11T00:00:00Z').toISOString();
+    const timeMax = new Date('2024-03-17T24:00:00Z').toISOString();
 
     let requestBody = {
         timeMin: timeMin,
@@ -111,7 +111,6 @@ async function queryFreeBusy() {
         const busyTimes = response.result.calendars || {};
 
         displayBusyTimes(busyTimes);
-        listUpcomingEvents();
 
     } catch (err) {document.getElementById('busy').innerText = `Error: ${err.message}`;}
 }
@@ -126,13 +125,40 @@ function displayBusyTimes(busyTimes) {
             
             output += `Calendar ${calendarId} is busy at:\n`;
 
-            busyTimes[calendarId].busy.forEach((busyPeriod) => {output += `- From ${busyPeriod.start} to ${busyPeriod.end}\n`;});
+            busyTimes[calendarId].busy.forEach((busyPeriod) => {
+                output += `- From ${busyPeriod.start} to ${busyPeriod.end}\n`;
+                displayTable(busyPeriod.start, busyPeriod.end);
+            });
 
         } else {output += `Calendar ${calendarId} is free!\n`;}
     }
 
     document.getElementById('busy').innerText = output;
 }
+
+function displayTable(start, end) {
+
+    const startDate = new Date(start);
+
+    const row = startDate.getHours()+1;
+    let col = startDate.getDay();
+
+    var table = document.querySelector('table');
+    var cellaDaCambiare = table.rows[row].cells[col];
+    cellaDaCambiare.style.backgroundColor = 'lightblue';
+
+    const endDate = new Date(end);
+    const endRow = endDate.getHours()+1;
+    
+    let check = endRow - row;
+
+    for(i = 1; i<check; i++) {
+        cellaDaCambiare = table.rows[row+i].cells[col];
+        cellaDaCambiare.style.backgroundColor = 'lightblue';
+    }
+    
+}
+
 
 // LIST UPCOMING EVENTS
 
