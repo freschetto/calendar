@@ -35,9 +35,9 @@ async function initializeGapiClient() {
 
 function gisLoaded() {
     tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
         callback: '',
+        client_id: CLIENT_ID,
+        scope: SCOPES
     });
     gisInited = true;
     maybeEnableButtons();
@@ -55,32 +55,33 @@ function maybeEnableButtons() {
 
 function handleAuthClick() {
 
-    console.log("login");
-
     tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) {
-        throw (resp);
-        }
+
+        if (resp.error !== undefined) {throw (resp);}
+
         document.getElementById('signout_button').style.visibility = 'visible';
         document.getElementById('authorize_button').innerText = 'Refresh';
-        await queryFreeBusy("2024-03-12T01:00:00Z", "2024-03-12T02:00:00Z");
+
+        await queryFreeBusy();
     };
 
-    if (gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({prompt: 'consent'});
-    } else {
-        tokenClient.requestAccessToken({prompt: ''});
-    }
+    if (gapi.client.getToken() === null) {tokenClient.requestAccessToken({prompt: 'consent'});}
+    else {tokenClient.requestAccessToken({prompt: ''});}
 }
 
 // HANDLE SIGN-OUT CLICK BUTTON EVENT
 
 function handleSignoutClick() {
+
     const token = gapi.client.getToken();
+
     if (token !== null) {
+
         google.accounts.oauth2.revoke(token.access_token);
         gapi.client.setToken('');
-        document.getElementById('content').innerText = '';
+
+        document.getElementById('busy').innerText = '';
+        document.getElementById('events').innerText = '';
         document.getElementById('authorize_button').innerText = 'Authorize';
         document.getElementById('signout_button').style.visibility = 'hidden';
     }
@@ -88,71 +89,77 @@ function handleSignoutClick() {
 
 // SINGLE QUERY FREE/BUSY REQUEST
 
-async function queryFreeBusy(timeMin, timeMax) {
+async function queryFreeBusy() {
+
+    const timeMin = new Date('2024-03-12T01:00:00Z').toISOString();
+    const timeMax = new Date('2024-03-12T24:00:00Z').toISOString();
+
     let requestBody = {
         timeMin: timeMin,
-        timeMax: timeMax.toISOString(),
+        timeMax: timeMax,
         items: [{ id: 'primary' }],
     };
-    console.log(requestBody);
+
     try {
+
         let response = await gapi.client.request({
             path: 'https://www.googleapis.com/calendar/v3/freeBusy',
             method: 'POST',
             body: requestBody
         });
 
-        console.log(response.result);
-
         const busyTimes = response.result.calendars || {};
+
         displayBusyTimes(busyTimes);
-    } catch (err) {
-        document.getElementById('content').innerText = `Error: ${err.message}`;
-    }
+        listUpcomingEvents();
+
+    } catch (err) {document.getElementById('busy').innerText = `Error: ${err.message}`;}
 }
 
 function displayBusyTimes(busyTimes) {
+
     let output = 'Busy times:\n';
+    
     for (let calendarId in busyTimes) {
+        
         if (busyTimes[calendarId].busy.length > 0) {
+            
             output += `Calendar ${calendarId} is busy at:\n`;
-            busyTimes[calendarId].busy.forEach((busyPeriod) => {
-                output += `- From ${busyPeriod.start} to ${busyPeriod.end}\n`;
-            });
-        } else {
-            output += `Calendar ${calendarId} is free!\n`;
-        }
+
+            busyTimes[calendarId].busy.forEach((busyPeriod) => {output += `- From ${busyPeriod.start} to ${busyPeriod.end}\n`;});
+
+        } else {output += `Calendar ${calendarId} is free!\n`;}
     }
-    document.getElementById('content').innerText = output;
+
+    document.getElementById('busy').innerText = output;
 }
 
 // LIST UPCOMING EVENTS
 
 async function listUpcomingEvents() {
+
     let response;
+
     try {
+
         const request = {
-        'calendarId': 'primary',
-        'timeMin': (new Date()).toISOString(),
-        'showDeleted': false,
-        'singleEvents': true,
-        'maxResults': 10,
-        'orderBy': 'startTime',
+            'calendarId': 'primary',
+            'timeMin': (new Date()).toISOString(),
+            'showDeleted': false,
+            'singleEvents': true,
+            'maxResults': 10,
+            'orderBy': 'startTime',
         };
+
         response = await gapi.client.calendar.events.list(request);
-    } catch (err) {
-        document.getElementById('content').innerText = err.message;
-        return;
-    }
+
+    } catch (err) {document.getElementById('events').innerText = err.message; return;}
 
     const events = response.result.items;
-    if (!events || events.length == 0) {
-        document.getElementById('content').innerText = 'No events found.';
-        return;
-    }
-    const output = events.reduce(
-        (str, event) => `${str}${event.summary} (${event.start.dateTime || event.start.date})\n`,'Events:\n'
-    );
 
-    document.getElementById('content').innerText = output;
+    if (!events || events.length == 0) {document.getElementById('events').innerText = 'No events found.'; return;}
+
+    const output = events.reduce((str, event) => `${str}${event.summary} (${event.start.dateTime || event.start.date})\n`,'Events:\n');
+
+    document.getElementById('events').innerText = output;
 }
