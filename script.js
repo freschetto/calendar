@@ -159,7 +159,6 @@ function displayTable(start, end) {
     
 }
 
-
 // LIST UPCOMING EVENTS
 
 async function listUpcomingEvents() {

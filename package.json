@@ -9,6 +9,7 @@
   "author": "freschetto",
   "license": "ISC",
   "dependencies": {
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "moment": "^2.30.1"
   }
 }

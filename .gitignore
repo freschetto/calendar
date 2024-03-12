@@ -1,5 +1,5 @@
 # Dependencies
-/packages/node_modules
+/node_modules
 
 # Environment configuration files
 .env
