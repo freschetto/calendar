@@ -75,6 +75,8 @@ function handleSignoutClick() {
 
     const token = gapi.client.getToken();
 
+    console.log(token);
+
     if (token !== null) {
 
         google.accounts.oauth2.revoke(token.access_token);
@@ -140,7 +142,7 @@ function displayTable(start, end) {
 
     const startDate = new Date(start);
 
-    const row = startDate.getHours()+1;
+    const row = startDate.getHours();
     let col = startDate.getDay();
 
     var table = document.querySelector('table');
@@ -148,7 +150,7 @@ function displayTable(start, end) {
     cellaDaCambiare.style.backgroundColor = 'lightblue';
 
     const endDate = new Date(end);
-    const endRow = endDate.getHours()+1;
+    const endRow = endDate.getHours();
     
     let check = endRow - row;
 
