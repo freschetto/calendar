@@ -1,10 +1,18 @@
 {
-  "name": "calendar",
-  "version": "1.0.0",
-  "description": "connected to Google Calendar, show your busy time directly in a calendar",
-  "main": "index.js",
-  "scripts": {"start": "index.js"},
-  "author": "freschetto",
-  "license": "ISC",
-  "dependencies": {"http-server": "^14.1.1"}
+  "name": "vite-project",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.1.6"
+  }
 }
