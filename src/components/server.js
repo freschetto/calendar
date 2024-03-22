@@ -1,9 +1,13 @@
 
 import express from 'express';
 import { google } from 'googleapis';
+import cors from 'cors';
 
 const app = express(); app.use(express.json());
 const port = process.env.PORT || 3000;
+const corsOptions = {origin: 'http://localhost:5173', optionsSuccessStatus: 200};
+
+app.use(cors(corsOptions));
 
 // CREDENTIALS FOR GOOGLE CALENDAR
 
@@ -23,7 +27,14 @@ app.get('/auth/google/callback', async (req, res) => {
 
     const { tokens } = await oauth2Client.getToken(req.query.code);
     oauth2Client.setCredentials(tokens);
-    res.send('Authentication successful! You can close this page.');
+    res.send(`
+        <html><body>
+        <script>
+        window.opener.postMessage('Authentication success', '*');
+        window.close();
+        </script>
+        </body></html>
+    `);
 
     } catch {res.status(500).send('Authentication failed');}
 });
@@ -36,20 +47,17 @@ app.get('/queryFreeBusy', async (req, res) => {
     const timeMax = new Date('2024-03-24T24:00:00Z').toISOString();
 
     const requestBody = {
-        timeMin: timeMin,
-        timeMax: timeMax,
-        items: [{ id: 'primary' }],
-    };
+    timeMin: timeMin,
+    timeMax: timeMax,
+    items: [{ id: 'primary' }]};
 
     try {
-        const response = await calendar.freebusy.query({ resource: requestBody });
-        const busyTimes = response.data.calendars || {};
-        console.log(busyTimes);
-        res.json(busyTimes);
-    } catch (err) {
-        console.error(`Error: ${err.message}`);
-        res.status(500).send(`Server error: ${err.message}`);
-    }
+
+    const response = await calendar.freebusy.query({ resource: requestBody });
+    const busyTimes = response.data.calendars || {};
+    res.json(busyTimes);
+
+    } catch (err) {console.error(`Error: ${err.message}`);}
 });
 
 // RUN AND START MY LOCAL SERVER BACK-END

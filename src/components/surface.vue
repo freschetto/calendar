@@ -2,18 +2,29 @@
 <script setup>
 
 import { ref } from 'vue';
-import w1 from './data/busyTimes.json';
-import w2 from './data/busyTimes-2.json';
 
 const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-const busyTimesData = [w1,w2];
+const busyTimesData = [4];
 
 let table = ref(); let week = 0;
 let events = ref();
 
-async function login() {window.location.href = 'http://localhost:3000/login';}
+async function login() {window.open('http://localhost:3000/login', 'LoginWindow');}
 
-function queryFreeBusy() {
+async function fetchBusyTimes() {
+
+    try {
+
+    const response = await fetch('http://localhost:3000/queryFreeBusy');
+    if (!response.ok) {throw new Error('Network response was not ok');}
+    busyTimesData[week] = await response.json();
+
+    } catch (error) {console.error('Failed to fetch busy times:', error);}
+}
+
+function display() {
+
+    fetchBusyTimes();
 
     // Load file json with the information
     const busyTimes = busyTimesData[week];
@@ -96,10 +107,11 @@ function displayTable(busyTimes, nameCalendar) {
             <div class="ui" style="display: flex;">
                 <button class="ui icon button"><i class="cog icon"></i></button>
                 <button class="ui fluid button" @click="login()">LOGIN</button>
-                <button class="ui icon button" @click="queryFreeBusy()"><i class="sync alternate icon"></i></button>
+                <button class="ui icon button" @click="display()"><i class="sync alternate icon"></i></button>
             </div>
             
         </div>
+
         <!-- BUSY EVENTS LIST OF CALENDARS -->
         <div v-html="events" class="ui segment">
             
