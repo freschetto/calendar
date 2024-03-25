@@ -1,7 +1,19 @@
-# Vue 3 + Vite
+## GOOGLE CALENDAR [ FREE OR BUSY? ]
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+This project is a web application designed to provide a seamless integration with **Google Calendar**, allowing users to quickly determine **free and busy times** within their schedules. It offers a weekly view, highlighting time slots that are occupied, thus facilitating the planning of meetings, events, or personal time. Leveraging **Vue.js** for the frontend and **Express.js** on the backend, alongside **Google's OAuth 2.0** for authentication, this application simplifies calendar management in a user-friendly interface.
 
-## Recommended IDE Setup
+### TECHNOLOGIES
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+This project is built using several modern technologies and frameworks:
+
+- **Vue.js**: A progressive JavaScript framework used for building user interfaces.
+- **Express.js**: A minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
+- **Google APIs**: For accessing Google Calendar data.
+- **moment-timezone**: A JavaScript library for parsing, validating, manipulating, and displaying dates and times in JavaScript.
+
+### GETTING STARTED
+
+Before setting up the project, ensure you have the following installed:
+- Node.js (Version 14.x or newer recommended)
+- npm (comes with Node.js)
+
