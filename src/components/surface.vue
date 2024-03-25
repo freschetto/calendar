@@ -2,12 +2,53 @@
 <script setup>
 
 import { ref } from 'vue';
+import moment, { relativeTimeRounding } from 'moment-timezone';
 
+// VARIABLE FOR FRONT-END
+
+const timezone = 'Europe/Rome';
 const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 
-let table = ref(); let events = ref(); var week = 0;
+let table = ref(); let events = ref(); 
+let week = 0; let month = ref(moment.tz(timezone).add(week, 'weeks').format('MMMM YYYY').toUpperCase());
+let numberDays = loadNumDays();
+
+// LOGIN FUNCTION
 
 async function login() {window.open('http://localhost:3000/login', 'LoginWindow');}
+
+// FUNCTION FOR MANAGE WEEKS
+
+function reload() {
+    week = 0; month = ref(moment.tz(timezone).add(week, 'weeks').format('MMMM YYYY').toUpperCase());
+    fetchBusyTimes(); 
+    numberDays = loadNumDays();
+}
+
+function nextWeek() {
+    week++; month = ref(moment.tz(timezone).add(week, 'weeks').format('MMMM YYYY').toUpperCase());
+    fetchBusyTimes(); 
+    numberDays = loadNumDays();
+}
+
+function prevoiusWeek() {
+    week--; month = ref(moment.tz(timezone).add(week, 'weeks').format('MMMM YYYY').toUpperCase());
+    fetchBusyTimes();
+    numberDays = loadNumDays();
+}
+
+function loadNumDays() {
+
+    let startOfWeek = moment.tz(timezone).add(week, 'weeks').startOf('week');
+    
+    let weekDaysNumbers = [];
+    
+    for (let i = 0; i < 7; i++) {let dayNumber = startOfWeek.clone().add(i, 'days').date(); weekDaysNumbers.push(dayNumber);}
+
+    return weekDaysNumbers;
+}
+
+// REQUEST BUSY TIMES INFORMATION BY WEEK
 
 async function fetchBusyTimes() {
 
@@ -27,6 +68,8 @@ async function fetchBusyTimes() {
     } catch (error) {console.error('Failed to fetch busy times:', error);}
 }
 
+// DISPLAY INFORMATIONS ON A LIST OF EVENTS AND CALENDAR
+
 function displayBusyTimes(busyTimes) {
 
     events.value = '';
@@ -43,12 +86,15 @@ function displayBusyTimes(busyTimes) {
 
             busyTimes[calendarId].busy.forEach((busyPeriod) => {
 
-                const sDate = new Date(busyPeriod.start);
-                const eDate = new Date(busyPeriod.end);
+                const sDate = moment(busyPeriod.start);
+                const eDate = moment(busyPeriod.end);
+
+                const startDateFormatted = sDate.format("dddd, MMMM Do YYYY, h:mm:ss a");
+                const endDateFormatted = eDate.format("dddd, MMMM Do YYYY, h:mm:ss a");
 
                 events.value += `<div class="item content">
-                <div class="header">${days[sDate.getDay()]} ${sDate.getDate()}</div>
-                <div class="description">From ${busyPeriod.start} To ${busyPeriod.end}</div>
+                <div class="header" style="margin-bottom: 0.2em">${sDate.format("dddd").toUpperCase()} ${sDate.format("D")}</div>
+                <div class="description">from ${sDate.format("HH:mm")} to ${eDate.format("HH:mm")}</div>
                 </div>`;
             });
 
@@ -101,7 +147,7 @@ function displayTable(busyTimes, nameCalendar) {
             <div class="ui" style="display: flex;">
                 <button class="ui icon button"><i class="cog icon"></i></button>
                 <button class="ui fluid button" @click="login();fetchBusyTimes()">LOGIN</button>
-                <button class="ui icon button" @click="fetchBusyTimes()"><i class="sync alternate icon"></i></button>
+                <button class="ui icon button" @click="reload()"><i class="sync alternate icon"></i></button>
             </div>
             
         </div>
@@ -120,14 +166,14 @@ function displayTable(busyTimes, nameCalendar) {
 
             <!-- INFORMATION AND NAVIGATION-->
             <div class="ui" style="display: flex;">
-                <button class="ui icon button" @click="week--;fetchBusyTimes()"><i class="angle double left icon"></i></button>
-                <button class="fluid ui button"><p>MARCH 2024</p></button>
-                <button class="ui icon button" @click="week++;fetchBusyTimes()"><i class="angle double right icon"></i></button>
+                <button class="ui icon button" @click="prevoiusWeek()"><i class="angle double left icon"></i></button>
+                <button class="fluid ui button"><p v-html="month"></p></button>
+                <button class="ui icon button" @click="nextWeek()"><i class="angle double right icon"></i></button>
             </div>
 
             <!-- WEEKLY GRAPHICS CALENDAR -->
             <table id="table" class="ui celled fixed table">
-                <thead><tr class="center aligned"><th v-for="day in days" :key="day">{{ day }}</th></tr></thead>
+                <thead><tr class="center aligned"><th v-for="(day, index) in days" :key="day">{{ day }} <hr> {{ numberDays[index] }}</th></tr></thead>
                 <tbody v-html="table"></tbody>
             </table>
 
