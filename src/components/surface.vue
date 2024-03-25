@@ -4,10 +4,8 @@
 import { ref } from 'vue';
 
 const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-const busyTimesData = [4];
 
-let table = ref(); let week = 0;
-let events = ref();
+let table = ref(); let events = ref(); var week = 0;
 
 async function login() {window.open('http://localhost:3000/login', 'LoginWindow');}
 
@@ -15,22 +13,18 @@ async function fetchBusyTimes() {
 
     try {
 
-    const response = await fetch('http://localhost:3000/queryFreeBusy');
+    const response = await fetch('http://localhost:3000/queryFreeBusy', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ week })
+    });
+
     if (!response.ok) {throw new Error('Network response was not ok');}
-    busyTimesData[week] = await response.json();
+
+    const busyTimes = await response.json();
+    displayBusyTimes(busyTimes);
 
     } catch (error) {console.error('Failed to fetch busy times:', error);}
-}
-
-function display() {
-
-    fetchBusyTimes();
-
-    // Load file json with the information
-    const busyTimes = busyTimesData[week];
-
-    // Display the information on list and calendar
-    displayBusyTimes(busyTimes);
 }
 
 function displayBusyTimes(busyTimes) {
@@ -38,10 +32,10 @@ function displayBusyTimes(busyTimes) {
     events.value = '';
 
     for (let calendarId in busyTimes) {
+
+        displayTable(busyTimes, calendarId);
         
         if (busyTimes[calendarId].busy.length > 0) {
-
-            displayTable(busyTimes, calendarId);
             
             events.value += `<button class="fluid ui center aligned button">${calendarId.toUpperCase()}</button>`;
 
@@ -106,8 +100,8 @@ function displayTable(busyTimes, nameCalendar) {
 
             <div class="ui" style="display: flex;">
                 <button class="ui icon button"><i class="cog icon"></i></button>
-                <button class="ui fluid button" @click="login()">LOGIN</button>
-                <button class="ui icon button" @click="display()"><i class="sync alternate icon"></i></button>
+                <button class="ui fluid button" @click="login();fetchBusyTimes()">LOGIN</button>
+                <button class="ui icon button" @click="fetchBusyTimes()"><i class="sync alternate icon"></i></button>
             </div>
             
         </div>
@@ -126,9 +120,9 @@ function displayTable(busyTimes, nameCalendar) {
 
             <!-- INFORMATION AND NAVIGATION-->
             <div class="ui" style="display: flex;">
-                <button class="ui icon button" @click="week--;queryFreeBusy()"><i class="angle double left icon"></i></button>
+                <button class="ui icon button" @click="week--;fetchBusyTimes()"><i class="angle double left icon"></i></button>
                 <button class="fluid ui button"><p>MARCH 2024</p></button>
-                <button class="ui icon button" @click="week++;queryFreeBusy()"><i class="angle double right icon"></i></button>
+                <button class="ui icon button" @click="week++;fetchBusyTimes()"><i class="angle double right icon"></i></button>
             </div>
 
             <!-- WEEKLY GRAPHICS CALENDAR -->

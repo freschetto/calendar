@@ -2,6 +2,9 @@
 import express from 'express';
 import { google } from 'googleapis';
 import cors from 'cors';
+import moment from 'moment-timezone';
+
+// SERVER SETTINGS AND DATA
 
 const app = express(); app.use(express.json());
 const port = process.env.PORT || 3000;
@@ -39,17 +42,19 @@ app.get('/auth/google/callback', async (req, res) => {
     } catch {res.status(500).send('Authentication failed');}
 });
 
-app.get('/queryFreeBusy', async (req, res) => {
+// MANAGER REQUEST FREE BUSY FROM GOOGLE
+
+app.post('/queryFreeBusy', async (req, res) => {
 
     const calendar = google.calendar({version: 'v3', auth: oauth2Client});
-    
-    const timeMin = new Date('2024-03-18T00:00:00Z').toISOString();
-    const timeMax = new Date('2024-03-24T24:00:00Z').toISOString();
 
-    const requestBody = {
-    timeMin: timeMin,
-    timeMax: timeMax,
-    items: [{ id: 'primary' }]};
+    const { week } = req.body;
+    const timezone = 'Europe/Rome';
+
+    const timeMin = moment.tz(timezone).add(week, 'weeks').startOf('isoWeek').toISOString();
+    const timeMax = moment.tz(timezone).add(week, 'weeks').endOf('isoWeek').toISOString();
+
+    const requestBody = {timeMin: timeMin, timeMax: timeMax, items: [{ id: 'primary' }]};
 
     try {
 
