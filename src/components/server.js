@@ -18,7 +18,18 @@ const GOOGLE_CLIENT_ID = '47183643703-lmcif7h6fba0hlcl3afcr8ea3ajra15b.apps.goog
 const GOOGLE_CLIENT_SECRET = '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';
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
-const oauth2Client = new google.auth.OAuth2(GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,"http://localhost:3000/auth/google/callback");
+const getOauth2Client = async() => {
+    return await new Promise(async(resolve, reject) => {
+        try {
+            const oauth2Client = new google.auth.OAuth2(GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,"http://localhost:3000/auth/google/callback");
+            resolve (oauth2Client);
+        } catch {
+            reject();
+        }
+    })
+}
+
+const oauth2Client = await getOauth2Client();
 
 // MANAGER FOR GOOGLE AUTHENTICATION
 
