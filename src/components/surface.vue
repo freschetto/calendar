@@ -8,42 +8,44 @@ import moment from "moment-timezone";
 const timezone = "Europe/Rome";
 const days = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
 
-let table = ref(); let events = ref();
 let week = 0;
-let month = ref();
-let numberDays = loadNumDays();
+let table = ref(); let events = ref(); let month = ref();
+let numdays = getNumDays();
 
-// LOGIN FUNCTION
+// LOGIN AND SIGNOUT FUNCTION
+
+let isLoggedIn = ref(false);
+
+const checkLoginStatus = () => {
+  const token = localStorage.getItem("token");
+  isLoggedIn.value = !!token;
+};
+
+checkLoginStatus();
 
 async function login() {
   window.open("http://localhost:3000/login", "LoginWindow");
+  this.isLoggedIn = true;
+}
+
+async function logout() {
+  await fetch("http://localhost:3000/logout", { method: "POST" });
+  this.isLoggedIn = false;
+  localStorage.removeItem("token");
 }
 
 // FUNCTION FOR MANAGE WEEKS
 
-function loadMonth() {
+function update() {
+
+  numdays = getNumDays();
+
   month = ref(moment.tz(timezone).add(week, "weeks").format("MMMM YYYY").toUpperCase());
-}
 
-function reload() {
-  week = 0; loadMonth();
   fetchBusyTimes();
-  numberDays = loadNumDays();
 }
 
-function nextWeek() {
-  week++; loadMonth();
-  fetchBusyTimes();
-  numberDays = loadNumDays();
-}
-
-function prevoiusWeek() {
-  week--; loadMonth();
-  fetchBusyTimes();
-  numberDays = loadNumDays();
-}
-
-function loadNumDays() {
+function getNumDays() {
 
   let startOfWeek = moment.tz(timezone).add(week, "weeks").startOf("week");
 
@@ -69,7 +71,7 @@ async function fetchBusyTimes() {
 
     .then(async (response) => {
       const busyTimes = await response.json();
-      displayBusyTimes(busyTimes);
+      displayTable(busyTimes);
     })
 
     .catch((err) => {
@@ -77,42 +79,29 @@ async function fetchBusyTimes() {
     });
 }
 
-// DISPLAY INFORMATIONS ON A LIST OF EVENTS AND CALENDAR
+function getBusyTimeMatrix(busyTimes) {
+  
+  const tableMatrix = Array.from({ length: 7 }, () => Array(24).fill(false));
 
-function displayBusyTimes(busyTimes) {
+  Object.values(busyTimes).forEach(calendar => {
 
-  events.value = "";
+    calendar.busy.forEach(busyPeriod => {
 
-  for (let calendarId in busyTimes) {
+      const start = new Date(busyPeriod.start);
+      const end = new Date(busyPeriod.end);
 
-    displayTable(busyTimes, calendarId);
+      let day = start.getDay() - 1; day = day < 0 ? 6 : day;
 
-    if (busyTimes[calendarId].busy.length > 0) {
-
-      events.value += `<button class="fluid ui center aligned button">${calendarId.toUpperCase()}</button>`;
-      events.value += '<div class="ui relaxed divided list">';
-
-      busyTimes[calendarId].busy.forEach((busyPeriod) => {
-
-        const sDate = moment(busyPeriod.start);
-        const eDate = moment(busyPeriod.end);
-
-        events.value += `<div class="item content">
-          <div class="header" style="margin-bottom: 0.2em">
-          ${sDate.format("dddd").toUpperCase()} - ${sDate.format("D MMMM").toUpperCase()}</div>`
-        
-        events.value +=  `<div class="description">
-          from ${sDate.format("HH:mm")} to ${eDate.format("HH:mm")}</div>
-        </div>`;
-      });
-
-      events.value += "</div>";
-
-    } else {events.value += `CALENDAR ${calendarId} IS FREE!\n`;}
-  }
+      for (let hour = start.getHours(); hour < end.getHours(); hour++) {
+        tableMatrix[day][hour] = true;
+      }
+    });
+  }); return tableMatrix;
 }
 
-function displayTable(busyTimes, nameCalendar) {
+function displayTable(busyTimes) {
+
+  const tableMatrix = getBusyTimeMatrix(busyTimes);
 
   table.value = "";
 
@@ -122,20 +111,9 @@ function displayTable(busyTimes, nameCalendar) {
 
     for (let col = 0; col < 7; col++) {
 
-      let style = "";
-
-      busyTimes[nameCalendar].busy.forEach((busyPeriod) => {
-
-        const sDate = new Date(busyPeriod.start);
-        const eDate = new Date(busyPeriod.end);
-
-        if (sDate.getHours() <= row && eDate.getHours() > row && eDate.getDay() - 1 === col) 
-        {
-          style = ' style="background-color: lightblue;"';
-        }
-      });
-
+      const style = tableMatrix[col][row] ? ' style="background-color: lightblue;"' : "";
       table.value += `<td${style}></td>`;
+
     }
 
     table.value += "</tr>";
@@ -145,16 +123,18 @@ function displayTable(busyTimes, nameCalendar) {
 
 <template>
 
-  <div class="ui two column grid container" style="margin: 1em">
+  <div class="ui two column grid container" style="margin: 1em;">
 
     <div class="four wide column">
 
       <!-- USER'S SETTINGS -->
       <div class="ui segment">
-        <div class="ui" style="display: flex">
+        <div class="ui" style="display: flex;">
           <button class="ui icon button"><i class="cog icon"></i></button>
-          <button class="ui fluid button"@click="login()">LOGIN</button>
-          <button class="ui icon button" @click="reload()"><i class="sync alternate icon"></i></button>
+          <button class="ui fluid button" @click="isLoggedIn ? logout() : login()">
+            {{ isLoggedIn ? 'LOGOUT' : 'LOGIN' }}
+          </button>
+          <button class="ui icon button" @click="week=0;update();"><i class="sync alternate icon"></i></button>
         </div>
       </div>
 
@@ -171,11 +151,11 @@ function displayTable(busyTimes, nameCalendar) {
         <!-- INFORMATION AND NAVIGATION-->
         <div class="ui" style="display: flex">
 
-          <button class="ui icon button" @click="prevoiusWeek()">
+          <button class="ui icon button" @click="week--;update();">
             <i class="angle double left icon"></i>
           </button>
           <button class="fluid ui button"><p v-html="month"></p></button>
-          <button class="ui icon button" @click="nextWeek()">
+          <button class="ui icon button" @click="week++;update();">
             <i class="angle double right icon"></i>
           </button>
 
@@ -184,7 +164,7 @@ function displayTable(busyTimes, nameCalendar) {
         <!-- WEEKLY GRAPHICS CALENDAR -->
         <table id="table" class="ui celled fixed table">
           <thead><tr class="center aligned">
-            <th v-for="(day, index) in days" :key="day">{{ day }}<hr />{{ numberDays[index] }}</th>
+            <th v-for="(day, index) in days" :key="day">{{ day }}<hr />{{ numdays[index] }}</th>
           </tr></thead>
           <tbody v-html="table"></tbody>
         </table>
