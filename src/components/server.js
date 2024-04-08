@@ -2,7 +2,9 @@
 import express from 'express';
 import { google } from 'googleapis';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import moment from 'moment-timezone';
+import session from 'express-session';
 
 // SERVER SETTINGS AND DATA
 
@@ -10,7 +12,9 @@ const app = express(); app.use(express.json());
 const port = process.env.PORT || 3000;
 const corsOptions = {origin: 'http://localhost:5173', optionsSuccessStatus: 200};
 
+app.use(cookieParser());
 app.use(cors(corsOptions));
+app.use(session({secret: 'napoli', resave: false, saveUninitialized: true}));
 
 // CREDENTIALS FOR GOOGLE CALENDAR
 
@@ -18,18 +22,31 @@ const GOOGLE_CLIENT_ID = '47183643703-lmcif7h6fba0hlcl3afcr8ea3ajra15b.apps.goog
 const GOOGLE_CLIENT_SECRET = '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';
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
-const getOauth2Client = async() => {
-    return await new Promise(async(resolve, reject) => {
-        try {
-            const oauth2Client = new google.auth.OAuth2(GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,"http://localhost:3000/auth/google/callback");
-            resolve (oauth2Client);
-        } catch {
-            reject();
-        }
-    })
+// CREATE AUTHENTICATION FOR GOOGLE
+
+function getOauth2Client() {
+
+    return new Promise((resolve, reject) => {
+
+        resolve(new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,"http://localhost:3000/auth/google/callback"))
+         
+        .catch(error => { reject(new Error("Failed to create oauth2 client: " + error.message)); });
+    });
 }
 
 const oauth2Client = await getOauth2Client();
+
+// GET CALENDAR FROM GOOGLE
+
+function getCalendar() {
+
+    return new Promise((resolve, reject) => {
+
+        resolve(google.calendar({version: 'v3', auth: oauth2Client}))
+
+        .catch(error => { reject(new Error("Failed to get calendar: " + error.message)); });
+    });
+}
 
 // MANAGER FOR GOOGLE AUTHENTICATION
 
@@ -38,13 +55,11 @@ app.get('/login', (req, res) => {res.redirect(oauth2Client.generateAuthUrl({acce
 app.get('/auth/google/callback', async (req, res) => {
     
     try {
-
     const { tokens } = await oauth2Client.getToken(req.query.code);
     oauth2Client.setCredentials(tokens);
     res.send(`
         <html><body>
         <script>
-        window.opener.postMessage('Authentication success', '*');
         window.close();
         </script>
         </body></html>
@@ -53,11 +68,18 @@ app.get('/auth/google/callback', async (req, res) => {
     } catch {res.status(500).send('Authentication failed');}
 });
 
+app.post('/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {return res.status(500).send('Errore durante il logout');}
+      res.send('Logout completato con successo');
+    });
+});
+
 // MANAGER REQUEST FREE BUSY FROM GOOGLE
 
 app.post('/queryFreeBusy', async (req, res) => {
 
-    const calendar = google.calendar({version: 'v3', auth: oauth2Client});
+    const calendar = await getCalendar();
 
     const { week } = req.body;
     const timezone = 'Europe/Rome';
@@ -65,7 +87,10 @@ app.post('/queryFreeBusy', async (req, res) => {
     const timeMin = moment.tz(timezone).add(week, 'weeks').startOf('isoWeek').toISOString();
     const timeMax = moment.tz(timezone).add(week, 'weeks').endOf('isoWeek').toISOString();
 
-    const requestBody = {timeMin: timeMin, timeMax: timeMax, items: [{ id: 'primary' }]};
+    const calendarsList = await calendar.calendarList.list();
+    const calendarItems = calendarsList.data.items.map(calendar => ({ id: calendar.id }));
+
+    const requestBody = {timeMin: timeMin, timeMax: timeMax, items: calendarItems};
 
     try {
 
