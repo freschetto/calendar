@@ -4,7 +4,6 @@ import { google } from 'googleapis';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import moment from 'moment-timezone';
-import session from 'express-session';
 
 // SERVER SETTINGS AND DATA
 
@@ -14,7 +13,6 @@ const corsOptions = {origin: 'http://localhost:5173', optionsSuccessStatus: 200}
 
 app.use(cookieParser());
 app.use(cors(corsOptions));
-app.use(session({secret: 'napoli', resave: false, saveUninitialized: true}));
 
 // CREDENTIALS FOR GOOGLE CALENDAR
 
@@ -69,11 +67,11 @@ app.get('/auth/google/callback', async (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {return res.status(500).send('Errore durante il logout');}
-      res.send('Logout completato con successo');
-    });
-});
+    
+    oauth2Client.setCredentials({ access_token: null, refresh_token: null, scope: null, token_type: null, expiry_date: null });
+
+    res.send("Logged out successfully");
+});  
 
 // MANAGER REQUEST FREE BUSY FROM GOOGLE
 
