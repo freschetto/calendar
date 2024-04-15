@@ -63,7 +63,10 @@ app.get('/auth/google/callback', async (req, res) => {
         </body></html>
     `);
 
-    } catch {res.status(500).send('Authentication failed');}
+    } catch (error) {
+    console.error('Authentication failed:', error);
+    res.status(500).send('Authentication failed');
+    }
 });
 
 app.post('/logout', (req, res) => {
