@@ -12,6 +12,11 @@ let week = 0;
 let table = ref(''); let month = ref(''); let events = ref('');
 let numdays = getNumDays();
 
+const checkboxes = [
+  {id:'primo', label:'uno', checked: true},
+  {id:'secondo', label:'due', checked: true}
+]
+
 // LOGIN AND SIGNOUT FUNCTION
 
 let isLoggedIn = ref(false);
@@ -220,7 +225,13 @@ function check(rowIndex, cellIndex) {
           <button v-else class="ui icon blue button" disabled><i class="sync alternate icon"></i></button>
         </div>
         
-        <div class="ui" style="display: flex;">
+        <div class="ui message">
+          <div class="checkbox-group">
+            <div v-for="checkbox in checkboxes" :key="checkbox.id" class="ui checkbox" style="padding: 0.25em;">
+              <input type="checkbox" :id="`checkbox-${checkbox.id}`" v-model="checkbox.checked">
+              <label :for="`checkbox-${checkbox.id}`">{{ checkbox.label }}</label>
+            </div>
+          </div>
         </div>
       </div>
 
