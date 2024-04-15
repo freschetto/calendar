@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "concurrently \"npm run server\" \"npm run dev\"",
+    "start": "npm run server",
     "dev": "vite",
-    "server": "cd src/components && node server.js",
+    "server": "cd server && node server.js",
     "build": "vite build",
     "preview": "vite preview"
   },

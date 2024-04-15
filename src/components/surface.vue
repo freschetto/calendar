@@ -15,11 +15,11 @@ let numdays = getNumDays();
 const checkboxes = [
   {
    id:'63c3b5b91d480fe537e59be2d822f4ba93a2410219829ecc79f04a1e179b4872@group.calendar.google.com', 
-   label:'primario', checked: true
+   label:'mario', checked: true
   },
   {
    id:'mariofrancamentecorretto@gmail.com', 
-   label:'secondario', checked: true
+   label:'lucia', checked: true
   }
 ]
 
@@ -38,7 +38,7 @@ async function logout() {
 
   try {
 
-    await fetch("http://localhost:3000/logout", { method: "POST" });
+    await fetch("/api/logout", { method: "POST" });
 
     localStorage.removeItem("token");
     this.isLoggedIn = false;
@@ -50,9 +50,11 @@ async function logout() {
 
 async function login() {
 
+  console.log("login");
+
   try {
 
-    const loginWindow = window.open("http://localhost:3000/login", "LoginWindow");
+    const loginWindow = window.open("./api/login", "LoginWindow");
 
     await new Promise((resolve, reject) => {
       const checkWindow = setInterval(() => {
@@ -107,7 +109,7 @@ function getNumDays() {
 
 async function fetchBusyTimes() {
 
-  await fetch("http://localhost:3000/queryFreeBusy", {
+  await fetch("/api/queryFreeBusy", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ week }),
@@ -244,7 +246,7 @@ function check(rowIndex, cellIndex) {
         
         <div class="ui message">
           <div class="checkbox-group">
-            <div v-for="checkbox in checkboxes" :key="checkbox.id" class="ui checkbox" style="padding: 0.25em;">
+            <div v-for="checkbox in checkboxes" :key="checkbox.id" class="ui checkbox" style="padding: 0.25em; display: block">
               <input type="checkbox" :id="`checkbox-${checkbox.id}`" v-model="checkbox.checked" @change="update()">
               <label :for="`checkbox-${checkbox.id}`">{{ checkbox.label }}</label>
             </div>
@@ -276,21 +278,22 @@ function check(rowIndex, cellIndex) {
         </div>
 
         <!-- WEEKLY GRAPHICS CALENDAR -->
-        <table id="table" class="ui celled fixed table definition compact">
+        <table id="table" class="ui fixed table definition compact" style="border: 0;">
           <thead>
             <tr class="center aligned">
               <th style="width: 2em;"></th>
-              <th style="font-size: smaller;" v-for="(day, index) in days" :key="day">{{ day }}<hr>{{ numdays[index] }}</th>
+              <th style="font-size: smaller; border: 0.05em solid rgba(34,36,38,.15);" v-for="(day, index) in days" :key="day">{{ day.substring(0,3) }} . {{ numdays[index] }}</th>
               <th style="width: 2em; border-right:0; background-color: white"></th>
             </tr>
           </thead>
-          <tbody>
+          <tbody style="font-weight: 420;">
             <tr v-for="(row, rowIndex) in table" :key="`row-${rowIndex}`">
-              <td class="collapsing" style="background-color: white; font-size: 0.5em; text-align: center;">{{ rowIndex }}</td>
+              <td class="collapsing" style="background-color: white; font-size: 0.5em; text-align: center; ">{{ rowIndex }}</td>
               <td @click="check(rowIndex, cellIndex)"
                   v-for="(cell, cellIndex) in row"
                   :key="`cell-${rowIndex}-${cellIndex}`"
-                  :class="{'busy': cell.isBusy, 'selected': cell.isSelected}">
+                  :class="{'busy': cell.isBusy, 'selected': cell.isSelected}"
+                  style=" border: 0.05em solid rgba(34,36,38,.15);">
               </td>
               <td class="collapsing" style="background-color: white; font-size: 0.5em; text-align: center;">{{ rowIndex }}</td>
             </tr>
@@ -311,10 +314,10 @@ function check(rowIndex, cellIndex) {
 
 <style>
 .busy {
-  background-color: lightblue;
+  background-color: rgb(220, 145, 132);
 }
 .selected {
-  background-color: yellow;
+  background-color: rgb(169, 206, 201);
 }
 </style>
 

@@ -4,15 +4,20 @@ import { google } from 'googleapis';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import moment from 'moment-timezone';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // SERVER SETTINGS AND DATA
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express(); app.use(express.json());
 const port = process.env.PORT || 3000;
-const corsOptions = {origin: 'http://localhost:5173', optionsSuccessStatus: 200};
 
-app.use(cookieParser());
-app.use(cors(corsOptions));
+// app.use(cors({origin: 'http://localhost:3000', optionsSuccessStatus: 200}));
+app.use(express.static(path.join(__dirname, 'dist')));
+// app.use(cookieParser());
 
 // CREDENTIALS FOR GOOGLE CALENDAR
 
@@ -20,13 +25,19 @@ const GOOGLE_CLIENT_ID = '47183643703-lmcif7h6fba0hlcl3afcr8ea3ajra15b.apps.goog
 const GOOGLE_CLIENT_SECRET = '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';
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
+// app.get('*', (req, res) => {
+//     if (!req.path.startsWith('/api')) {
+//         res.sendFile(path.resolve(__dirname, 'client', 'dist', 'index.html'));
+//     }
+// });
+
 // CREATE AUTHENTICATION FOR GOOGLE
 
 function getOauth2Client() {
 
     return new Promise((resolve, reject) => {
 
-        resolve(new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,"http://localhost:3000/auth/google/callback"))
+        resolve(new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,"/api/auth/google/callback"))
          
         .catch(error => { reject(new Error("Failed to create oauth2 client: " + error.message)); });
     });
@@ -48,9 +59,13 @@ function getCalendar() {
 
 // MANAGER FOR GOOGLE AUTHENTICATION
 
-app.get('/login', (req, res) => {res.redirect(oauth2Client.generateAuthUrl({access_type: 'offline', scope: SCOPES}));});
+app.get('/api/login', (req, res) => {
+    console.log("log");
+    window.open();
+    res.redirect(oauth2Client.generateAuthUrl({access_type: 'offline', scope: SCOPES}));
+});
 
-app.get('/auth/google/callback', async (req, res) => {
+app.get('/api/auth/google/callback', async (req, res) => {
     
     try {
     const { tokens } = await oauth2Client.getToken(req.query.code);
@@ -69,7 +84,7 @@ app.get('/auth/google/callback', async (req, res) => {
     }
 });
 
-app.post('/logout', (req, res) => {
+app.post('./api/logout', (req, res) => {
     
     oauth2Client.setCredentials({ access_token: null, refresh_token: null, scope: null, token_type: null, expiry_date: null });
 
@@ -78,7 +93,7 @@ app.post('/logout', (req, res) => {
 
 // MANAGER REQUEST FREE BUSY FROM GOOGLE
 
-app.post('/queryFreeBusy', async (req, res) => {
+app.post('/api/queryFreeBusy', async (req, res) => {
 
     const calendar = await getCalendar();
 

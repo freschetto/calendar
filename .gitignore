@@ -9,6 +9,7 @@
 # Cache files and directories
 .cache/
 /dist/
+/server/dist
 /public/build/
 
 # Text editors and IDEs settings
