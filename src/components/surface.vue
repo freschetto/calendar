@@ -9,7 +9,7 @@ const timezone = "Europe/Rome";
 const days = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
 
 let week = 0;
-let table = ref(); let events = ref(); let month = ref();
+let table = ref(); let month = ref(); let events = ref('');
 let numdays = getNumDays();
 
 // LOGIN AND SIGNOUT FUNCTION
@@ -23,15 +23,41 @@ const checkLoginStatus = () => {
 
 checkLoginStatus();
 
-async function login() {
-  window.open("http://localhost:3000/login", "LoginWindow");
-  this.isLoggedIn = true;
+async function logout() {
+
+  try {
+
+    await fetch("http://localhost:3000/logout", { method: "POST" });
+
+    localStorage.removeItem("token");
+    this.isLoggedIn = false;
+
+    // clear();
+    
+  } catch (error) {console.error("Logout failed:", error);}
 }
 
-async function logout() {
-  await fetch("http://localhost:3000/logout", { method: "POST" });
-  this.isLoggedIn = false;
-  localStorage.removeItem("token");
+async function login() {
+
+  try {
+
+    const loginWindow = window.open("http://localhost:3000/login", "LoginWindow");
+
+    await new Promise((resolve, reject) => {
+      const checkWindow = setInterval(() => {
+        if (loginWindow.closed) {
+          clearInterval(checkWindow);
+          resolve();
+        }
+      }, 1000);
+    });
+    
+    this.isLoggedIn = true;
+    this.update();
+
+  } catch (error) {
+    console.error("Login failed:", error);
+  }
 }
 
 // FUNCTION FOR MANAGE WEEKS
@@ -100,24 +126,66 @@ function getBusyTimeMatrix(busyTimes) {
 }
 
 function displayTable(busyTimes) {
-
+  
   const tableMatrix = getBusyTimeMatrix(busyTimes);
-
-  table.value = "";
+  table.value = [];
 
   for (let row = 0; row < 24; row++) {
-
-    table.value += "<tr>";
-
+    const tableRow = [];
     for (let col = 0; col < 7; col++) {
-
-      const style = tableMatrix[col][row] ? ' style="background-color: lightblue;"' : "";
-      table.value += `<td${style}></td>`;
-
+      const isBusy = tableMatrix[col][row];
+      tableRow.push({ isBusy });
     }
-
-    table.value += "</tr>";
+    table.value.push(tableRow);
   }
+}
+
+var freeTimes = [];
+
+function toggleSelection(rowIndex, cellIndex) {
+  table.value[rowIndex][cellIndex].isSelected = !table.value[rowIndex][cellIndex].isSelected;
+
+  const index = freeTimes.findIndex(pair => pair[0] === rowIndex && pair[1] === cellIndex);
+
+  if (index === -1) {
+    // Se non trovato e la cella è selezionata, aggiungi la coppia a freeTimes
+    if (table.value[rowIndex][cellIndex].isSelected) {
+      freeTimes.push([rowIndex, cellIndex]);
+    }
+  } else {
+    // Se trovato, rimuovi la coppia da freeTimes
+    freeTimes.splice(index, 1);
+  }
+}
+
+function generateEventHtml() {
+
+  let html = '<div class="ui relaxed divided list">';
+  let i = 0;
+
+  while (i < freeTimes.length) {
+
+    let before = freeTimes[i][1]; 
+
+    html += `<div class="item content">
+    <div class="header" style="margin-bottom: 0.2em">${days[freeTimes[i][1]]} ${numdays[freeTimes[i][1]]}</div>`;
+
+    while (i < freeTimes.length && freeTimes[i][1] == before) {
+      html += `<div class="description">from ${freeTimes[i][0]}:00 to ${freeTimes[i][0] + 1}:00</div>`; i++;
+    }
+      
+    html += `</div>`;
+    
+  }
+
+  html += '</div>';
+
+  events.value = html;
+}
+
+function check(rowIndex, cellIndex) {
+  toggleSelection(rowIndex, cellIndex);
+  generateEventHtml();
 }
 </script>
 
@@ -131,10 +199,10 @@ function displayTable(busyTimes) {
       <div class="ui segment">
         <div class="ui" style="display: flex;">
           <button class="ui icon button"><i class="cog icon"></i></button>
-          <button class="ui fluid button" @click="isLoggedIn ? logout() : login()">
-            {{ isLoggedIn ? 'LOGOUT' : 'LOGIN' }}
-          </button>
-          <button class="ui icon button" @click="week=0;update();"><i class="sync alternate icon"></i></button>
+          <button v-if="isLoggedIn" class="ui negative fluid button" @click="logout()">LOGOUT</button>
+          <button v-else="isLoggedIn" class="ui positive fluid button" @click="login()">LOGIN</button>
+          <button v-if="isLoggedIn" class="ui icon blue button" @click="week=0;events=ref('');update();"><i class="sync alternate icon"></i></button>
+          <button v-else="isLoggedIn" class="ui icon gray button"><i class="sync alternate icon"></i></button>
         </div>
       </div>
 
@@ -146,7 +214,7 @@ function displayTable(busyTimes) {
     <div class="twelve wide column">
 
       <!-- DISPLAY CALENDAR -->
-      <div class="ui segment">
+      <div v-if="isLoggedIn" class="ui segment">
 
         <!-- INFORMATION AND NAVIGATION-->
         <div class="ui" style="display: flex">
@@ -163,15 +231,36 @@ function displayTable(busyTimes) {
 
         <!-- WEEKLY GRAPHICS CALENDAR -->
         <table id="table" class="ui celled fixed table">
-          <thead><tr class="center aligned">
-            <th v-for="(day, index) in days" :key="day">{{ day }}<hr />{{ numdays[index] }}</th>
-          </tr></thead>
-          <tbody v-html="table"></tbody>
-        </table>
+  <thead>
+    <tr class="center aligned">
+      <th v-for="(day, index) in days" :key="day">{{ day }}<hr>{{ numdays[index] }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="(row, rowIndex) in table" :key="`row-${rowIndex}`">
+      <td @click="check(rowIndex, cellIndex)" v-for="(cell, cellIndex) in row" :key="`cell-${rowIndex}-${cellIndex}`" :class="{'busy': cell.isBusy, 'selected': cell.isSelected}"></td>
+    </tr>
+  </tbody>
+</table>
 
+
+      </div>
+
+      <div v-else="isLoggedIn" class="ui segment">
+        <div class="ui segment" style="display: flex"> PER FAVORE EFFETTUA IL LOGIN </div>
       </div>
 
     </div>
   </div>
 
 </template>
+
+<style>
+.busy {
+  background-color: lightblue;
+}
+.selected {
+  background-color: yellow;
+}
+</style>
+
