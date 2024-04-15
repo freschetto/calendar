@@ -13,8 +13,14 @@ let table = ref(''); let month = ref(''); let events = ref('');
 let numdays = getNumDays();
 
 const checkboxes = [
-  {id:'primo', label:'uno', checked: true},
-  {id:'secondo', label:'due', checked: true}
+  {
+   id:'63c3b5b91d480fe537e59be2d822f4ba93a2410219829ecc79f04a1e179b4872@group.calendar.google.com', 
+   label:'primario', checked: true
+  },
+  {
+   id:'mariofrancamentecorretto@gmail.com', 
+   label:'secondario', checked: true
+  }
 ]
 
 // LOGIN AND SIGNOUT FUNCTION
@@ -65,9 +71,16 @@ async function login() {
   }
 }
 
+function clear() {
+  events = ref('');
+  freeTimes = [];
+}
+
 // FUNCTION FOR MANAGE WEEKS
 
 function update() {
+
+  clear();
 
   numdays = getNumDays();
 
@@ -114,19 +127,23 @@ function getBusyTimeMatrix(busyTimes) {
   
   const tableMatrix = Array.from({ length: 7 }, () => Array(24).fill(false));
 
-  Object.values(busyTimes).forEach(calendar => {
+  checkboxes.forEach(checkbox => {
 
-    calendar.busy.forEach(busyPeriod => {
+    if (checkbox.checked && busyTimes[checkbox.id]) {
 
-      const start = new Date(busyPeriod.start);
-      const end = new Date(busyPeriod.end);
+      busyTimes[checkbox.id].busy.forEach(busyPeriod => {
 
-      let day = start.getDay() - 1; day = day < 0 ? 6 : day;
+        const start = new Date(busyPeriod.start);
+        const end = new Date(busyPeriod.end);
 
-      for (let hour = start.getHours(); hour < end.getHours(); hour++) {
-        tableMatrix[day][hour] = true;
-      }
-    });
+        let day = start.getDay() - 1;
+        day = day < 0 ? 6 : day;
+
+        for (let hour = start.getHours(); hour < end.getHours(); hour++) {
+          tableMatrix[day][hour] = true;
+        }
+      });
+    }
   }); return tableMatrix;
 }
 
@@ -221,14 +238,14 @@ function check(rowIndex, cellIndex) {
           <button class="ui icon button" @click="download()"><i class="cog icon"></i></button>
           <button v-if="isLoggedIn" class="ui negative fluid button" @click="logout()">LOGOUT</button>
           <button v-else class="ui positive fluid button" @click="login()">LOGIN</button>
-          <button v-if="isLoggedIn && week != 0" class="ui icon blue button" @click="week=0;events=ref('');update();"><i class="sync alternate icon"></i></button>
+          <button v-if="isLoggedIn && week != 0" class="ui icon blue button" @click="week=0;update();"><i class="sync alternate icon"></i></button>
           <button v-else class="ui icon blue button" disabled><i class="sync alternate icon"></i></button>
         </div>
         
         <div class="ui message">
           <div class="checkbox-group">
             <div v-for="checkbox in checkboxes" :key="checkbox.id" class="ui checkbox" style="padding: 0.25em;">
-              <input type="checkbox" :id="`checkbox-${checkbox.id}`" v-model="checkbox.checked">
+              <input type="checkbox" :id="`checkbox-${checkbox.id}`" v-model="checkbox.checked" @change="update()">
               <label :for="`checkbox-${checkbox.id}`">{{ checkbox.label }}</label>
             </div>
           </div>
@@ -259,15 +276,23 @@ function check(rowIndex, cellIndex) {
         </div>
 
         <!-- WEEKLY GRAPHICS CALENDAR -->
-        <table id="table" class="ui celled fixed table">
+        <table id="table" class="ui celled fixed table definition compact">
           <thead>
             <tr class="center aligned">
-              <th v-for="(day, index) in days" :key="day">{{ day }}<hr>{{ numdays[index] }}</th>
+              <th style="width: 2em;"></th>
+              <th style="font-size: smaller;" v-for="(day, index) in days" :key="day">{{ day }}<hr>{{ numdays[index] }}</th>
+              <th style="width: 2em; border-right:0; background-color: white"></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(row, rowIndex) in table" :key="`row-${rowIndex}`">
-              <td @click="check(rowIndex, cellIndex)" v-for="(cell, cellIndex) in row" :key="`cell-${rowIndex}-${cellIndex}`" :class="{'busy': cell.isBusy, 'selected': cell.isSelected}"></td>
+              <td class="collapsing" style="background-color: white; font-size: 0.5em; text-align: center;">{{ rowIndex }}</td>
+              <td @click="check(rowIndex, cellIndex)"
+                  v-for="(cell, cellIndex) in row"
+                  :key="`cell-${rowIndex}-${cellIndex}`"
+                  :class="{'busy': cell.isBusy, 'selected': cell.isSelected}">
+              </td>
+              <td class="collapsing" style="background-color: white; font-size: 0.5em; text-align: center;">{{ rowIndex }}</td>
             </tr>
           </tbody>
         </table>
