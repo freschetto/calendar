@@ -12,16 +12,7 @@ let week = 0;
 let table = ref(''); let month = ref(''); let events = ref('');
 let numdays = getNumDays();
 
-const checkboxes = [
-  {
-   id:'63c3b5b91d480fe537e59be2d822f4ba93a2410219829ecc79f04a1e179b4872@group.calendar.google.com', 
-   label:'mario', checked: true
-  },
-  {
-   id:'mariofrancamentecorretto@gmail.com', 
-   label:'lucia', checked: true
-  }
-]
+var calendars = []
 
 // LOGIN AND SIGNOUT FUNCTION
 
@@ -63,6 +54,7 @@ async function login() {
       }, 1000);
     });
     
+    fetchCalendars();
     isLoggedIn.value = true;
     update();
 
@@ -105,6 +97,21 @@ function getNumDays() {
 
 // REQUEST BUSY TIMES INFORMATION BY WEEK
 
+async function fetchCalendars() {
+
+  await fetch("./api/calendarsList", { method: "POST" })
+
+    .then(async (response) => {
+      calendars = await response.json();
+    })
+
+    .catch((err) => {
+      console.error("Failed to fetch calendars:", err);
+    });
+      
+  console.log(calendars);
+}
+
 async function fetchBusyTimes() {
 
   await fetch("/api/queryFreeBusy", {
@@ -127,7 +134,7 @@ function getBusyTimeMatrix(busyTimes) {
   
   const tableMatrix = Array.from({ length: 7 }, () => Array(24).fill(false));
 
-  checkboxes.forEach(checkbox => {
+  calendars.forEach(checkbox => {
 
     if (checkbox.checked && busyTimes[checkbox.id]) {
 
@@ -244,7 +251,7 @@ function check(rowIndex, cellIndex) {
         
         <div class="ui message">
           <div class="checkbox-group">
-            <div v-for="checkbox in checkboxes" :key="checkbox.id" class="ui checkbox" style="padding: 0.25em; display: block">
+            <div v-for="checkbox in calendars" :key="checkbox.id" class="ui checkbox" style="padding: 0.25em; display: block">
               <input type="checkbox" :id="`checkbox-${checkbox.id}`" v-model="checkbox.checked" @change="update()">
               <label :for="`checkbox-${checkbox.id}`">{{ checkbox.label }}</label>
             </div>

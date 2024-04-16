@@ -81,6 +81,21 @@ app.post('/api/logout', (req, res) => {
 
 // MANAGER REQUEST FREE BUSY FROM GOOGLE
 
+app.post('/api/calendarsList', async (req, res) => {
+
+    const calendar = await getCalendar();
+    const calendarsList = await calendar.calendarList.list();
+    const calendarItems = calendarsList.data.items;
+
+    var calendars = [];
+
+    for(var item of calendarItems) {
+    calendars.push({ id: item.id, label: item.summary, checked: true});
+    }
+    res.json(calendars);
+
+});
+
 app.post('/api/queryFreeBusy', async (req, res) => {
 
     const calendar = await getCalendar();
