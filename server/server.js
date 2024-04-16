@@ -1,8 +1,6 @@
 
 import express from 'express';
 import { google } from 'googleapis';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
 import moment from 'moment-timezone';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -15,9 +13,7 @@ const __dirname = path.dirname(__filename);
 const app = express(); app.use(express.json());
 const port = process.env.PORT || 3000;
 
-// app.use(cors({origin: 'http://localhost:3000', optionsSuccessStatus: 200}));
 app.use(express.static(path.join(__dirname, 'dist')));
-// app.use(cookieParser());
 
 // CREDENTIALS FOR GOOGLE CALENDAR
 
@@ -25,19 +21,13 @@ const GOOGLE_CLIENT_ID = '47183643703-lmcif7h6fba0hlcl3afcr8ea3ajra15b.apps.goog
 const GOOGLE_CLIENT_SECRET = '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';
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
-// app.get('*', (req, res) => {
-//     if (!req.path.startsWith('/api')) {
-//         res.sendFile(path.resolve(__dirname, 'client', 'dist', 'index.html'));
-//     }
-// });
-
 // CREATE AUTHENTICATION FOR GOOGLE
 
 function getOauth2Client() {
 
     return new Promise((resolve, reject) => {
 
-        resolve(new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,"/api/auth/google/callback"))
+        resolve(new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,"http://localhost:3000/api/auth/google/callback"))
          
         .catch(error => { reject(new Error("Failed to create oauth2 client: " + error.message)); });
     });
@@ -60,8 +50,6 @@ function getCalendar() {
 // MANAGER FOR GOOGLE AUTHENTICATION
 
 app.get('/api/login', (req, res) => {
-    console.log("log");
-    window.open();
     res.redirect(oauth2Client.generateAuthUrl({access_type: 'offline', scope: SCOPES}));
 });
 

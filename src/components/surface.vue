@@ -50,8 +50,6 @@ async function logout() {
 
 async function login() {
 
-  console.log("login");
-
   try {
 
     const loginWindow = window.open("./api/login", "LoginWindow");
@@ -65,8 +63,8 @@ async function login() {
       }, 1000);
     });
     
-    this.isLoggedIn = true;
-    this.update();
+    isLoggedIn.value = true;
+    update();
 
   } catch (error) {
     console.error("Login failed:", error);
