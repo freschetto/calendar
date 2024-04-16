@@ -72,7 +72,7 @@ app.get('/api/auth/google/callback', async (req, res) => {
     }
 });
 
-app.post('./api/logout', (req, res) => {
+app.post('/api/logout', (req, res) => {
     
     oauth2Client.setCredentials({ access_token: null, refresh_token: null, scope: null, token_type: null, expiry_date: null });
 

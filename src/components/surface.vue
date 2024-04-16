@@ -38,10 +38,10 @@ async function logout() {
 
   try {
 
-    await fetch("/api/logout", { method: "POST" });
+    await fetch("./api/logout", { method: "POST" });
 
     localStorage.removeItem("token");
-    this.isLoggedIn = false;
+    isLoggedIn.value = false;
 
     week = 0; table = ref(''); month = ref(''); events = ref('');
     

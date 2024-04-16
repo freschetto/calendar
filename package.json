@@ -8,6 +8,7 @@
     "dev": "vite",
     "server": "cd server && node server.js",
     "build": "vite build",
+    "build-docker": "docker build -t ptorric/maskcal --platform linux/amd64 .; docker tag ptorric/maskcal eu.gcr.io/clicker-2017/maskcal;",
     "preview": "vite preview"
   },
   "dependencies": {
