@@ -33,7 +33,8 @@ async function logout() {
     localStorage.removeItem("token");
     isLoggedIn.value = false;
 
-    week = 0; table = ref(''); month = ref(''); events = ref('');
+    week = 0; calendars = [];
+    table = ref(''); month = ref(''); events = ref('');
     
   } catch (error) {console.error("Logout failed:", error);}
 }
@@ -269,9 +270,9 @@ function download() {
 
 <template>
 
-  <div class="ui two column grid container" style="margin: 1em;">
+  <div class="ui two column grid container" style="width: 100vw; height: 100vh; margin: 0; overflow: hidden;">
 
-    <div class="four wide column">
+    <div class="four wide column" style="height: 100vh;">
 
       <!-- CALENDAR INFORMATION -->
       <div class="ui segment">
@@ -286,7 +287,7 @@ function download() {
         </div>
         
         <!-- LIST OF CALENDARS WHIT CHECKBOX -->
-        <div class="ui message">
+        <div class="ui message" style="height: 40vh;">
           <div class="checkbox-group">
             <div v-for="checkbox in calendars" :key="checkbox.id" class="ui checkbox" style="padding: 0.25em; display: block">
               <input type="checkbox" :id="`checkbox-${checkbox.id}`" v-model="checkbox.checked" @change="update()">
@@ -297,7 +298,7 @@ function download() {
       </div>
 
       <!-- BUSY EVENTS LIST OF CALENDARS -->
-      <div v-html="events" class="ui segment"></div>
+      <div v-html="events" class="ui segment" style="overflow-y: scroll; height: 45.4vh;"></div>
 
     </div>
 
@@ -349,7 +350,7 @@ function download() {
       </div>
 
       <div v-else="isLoggedIn" class="ui segment">
-        <div class="ui segment" style="display: flex"> PER FAVORE EFFETTUA IL LOGIN </div>
+        <div class="ui segment" style="display: flex; height: 93.4vh;"> PER FAVORE EFFETTUA IL LOGIN </div>
       </div>
 
     </div>
