@@ -3,7 +3,7 @@
 import { ref } from "vue";
 import moment from "moment-timezone";
 
-// VARIABLE FOR FRONT-END
+// COSTANTS AND VARIABLES
 
 const timezone = "Europe/Rome";
 const days = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
@@ -14,16 +14,15 @@ let numdays = getNumDays();
 
 var calendars = []
 
-// LOGIN AND SIGNOUT FUNCTION
+// ACCOUNT PARAMATERS
 
-let isLoggedIn = ref(false);
+let isLoggedIn = ref('');
 
-const checkLoginStatus = () => {
-  const token = localStorage.getItem("token");
-  isLoggedIn.value = !!token;
-};
+const checkLoginStatus = () => { const token = localStorage.getItem("token"); isLoggedIn.value = !!token; };
 
 checkLoginStatus();
+
+// LOGOUT FUNCTION
 
 async function logout() {
 
@@ -38,6 +37,8 @@ async function logout() {
     
   } catch (error) {console.error("Logout failed:", error);}
 }
+
+// LOGIN FUNCTION
 
 async function login() {
 
@@ -63,12 +64,9 @@ async function login() {
   }
 }
 
-function clear() {
-  events = ref('');
-  freeTimes = [];
-}
-
 // FUNCTION FOR MANAGE WEEKS
+
+function clear() { events = ref(''); freeTimes = []; }
 
 function update() {
 
@@ -95,7 +93,7 @@ function getNumDays() {
   return weekDaysNumbers;
 }
 
-// REQUEST BUSY TIMES INFORMATION BY WEEK
+// REQUEST ALL CALENDAR ID AND INFORMATIONS
 
 async function fetchCalendars() {
 
@@ -111,6 +109,8 @@ async function fetchCalendars() {
       
   console.log(calendars);
 }
+
+// REQUEST ALL INFORMATIONS ABOUT BUSYTIMES BY WEEK
 
 async function fetchBusyTimes() {
 
@@ -129,6 +129,8 @@ async function fetchBusyTimes() {
       console.error("Failed to fetch busy times:", err);
     });
 }
+
+// CONVERT BUSYTIMES TO BOOLEAN CALENDAR MATRIX
 
 function getBusyTimeMatrix(busyTimes) {
   
@@ -154,6 +156,8 @@ function getBusyTimeMatrix(busyTimes) {
   }); return tableMatrix;
 }
 
+// DISPLAY FROM MATRIX BUSY TIMES ON A TABLE
+
 function displayTable(busyTimes) {
   
   const tableMatrix = getBusyTimeMatrix(busyTimes);
@@ -169,7 +173,39 @@ function displayTable(busyTimes) {
   }
 }
 
-var freeTimes = [];
+// MANAGER USER'S CLICK
+
+function check(rowIndex, cellIndex) {
+  toggleSelection(rowIndex, cellIndex);
+  generateEventHtml();
+}
+
+// CONVERT USER'S CLICK TO LIST OF POSITIONS
+
+var freeTimes = []; let drag = false;
+
+function down(rowIndex, cellIndex) {
+  drag = true; toggleSelection(rowIndex, cellIndex);
+}
+
+function move(rowIndex, cellIndex) {
+  if(drag) {
+
+    if (!table.value[rowIndex][cellIndex].isSelected) {
+      table.value[rowIndex][cellIndex].isSelected = true;
+
+      const index = freeTimes.findIndex(pair => pair[0] === rowIndex && pair[1] === cellIndex);
+      if (index === -1) {
+        freeTimes.push([rowIndex, cellIndex]);
+      }
+    }
+  }
+}
+
+function up() {
+  drag = false; generateEventHtml();
+}
+
 
 function toggleSelection(rowIndex, cellIndex) {
 
@@ -184,6 +220,8 @@ function toggleSelection(rowIndex, cellIndex) {
     freeTimes.splice(index, 1);
   }
 }
+
+// CONVERT LIST OF POSITIONS TO HTML ELEMENTS 
 
 function generateEventHtml() {
 
@@ -210,6 +248,8 @@ function generateEventHtml() {
   events.value = html;
 }
 
+// DOWNLOAD LIST OF EVENTS CLICKED BY USER
+
 function download() {
 
   const htmlContent = events.value;
@@ -225,11 +265,6 @@ function download() {
   document.body.removeChild(downloadLink);
   URL.revokeObjectURL(url);
 }
-
-function check(rowIndex, cellIndex) {
-  toggleSelection(rowIndex, cellIndex);
-  generateEventHtml();
-}
 </script>
 
 <template>
@@ -238,9 +273,10 @@ function check(rowIndex, cellIndex) {
 
     <div class="four wide column">
 
-      <!-- USER'S SETTINGS -->
+      <!-- CALENDAR INFORMATION -->
       <div class="ui segment">
 
+        <!-- USER'S SETTINGS -->
         <div class="ui" style="display: flex;">
           <button class="ui icon button" @click="download()"><i class="cog icon"></i></button>
           <button v-if="isLoggedIn" class="ui negative fluid button" @click="logout()">LOGOUT</button>
@@ -249,6 +285,7 @@ function check(rowIndex, cellIndex) {
           <button v-else class="ui icon blue button" disabled><i class="sync alternate icon"></i></button>
         </div>
         
+        <!-- LIST OF CALENDARS WHIT CHECKBOX -->
         <div class="ui message">
           <div class="checkbox-group">
             <div v-for="checkbox in calendars" :key="checkbox.id" class="ui checkbox" style="padding: 0.25em; display: block">
@@ -293,8 +330,11 @@ function check(rowIndex, cellIndex) {
           </thead>
           <tbody style="font-weight: 420;">
             <tr v-for="(row, rowIndex) in table" :key="`row-${rowIndex}`">
-              <td class="collapsing" style="background-color: white; font-size: 0.5em; text-align: center; ">{{ rowIndex }}</td>
-              <td @click="check(rowIndex, cellIndex)"
+              <td class="collapsing" style="background-color: white; font-size: 0.5em; font-weight: 100; text-align: center; ">{{ rowIndex }}</td>
+              <td 
+                  @mousedown="down(rowIndex, cellIndex)"
+                  @mousemove="move(rowIndex, cellIndex)"
+                  @mouseup="up()"
                   v-for="(cell, cellIndex) in row"
                   :key="`cell-${rowIndex}-${cellIndex}`"
                   :class="{'busy': cell.isBusy, 'selected': cell.isSelected}"
@@ -323,6 +363,9 @@ function check(rowIndex, cellIndex) {
 }
 .selected {
   background-color: rgb(169, 206, 201);
+}
+body {
+  user-select: none;
 }
 </style>
 
