@@ -5,6 +5,9 @@ import moment from "moment-timezone";
 
 // COSTANTS AND VARIABLES
 
+let isLoggedIn = ref('');
+const checkLoginStatus = () => { const token = localStorage.getItem("token"); isLoggedIn.value = !!token; };
+
 const timezone = "Europe/Rome";
 const days = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
 
@@ -14,15 +17,9 @@ let numdays = getNumDays();
 
 var calendars = []
 
-// ACCOUNT PARAMATERS
-
-let isLoggedIn = ref('');
-
-const checkLoginStatus = () => { const token = localStorage.getItem("token"); isLoggedIn.value = !!token; };
+/*--------------------------------------------------------------------------------------------------------------*/
 
 checkLoginStatus();
-
-// LOGOUT FUNCTION
 
 async function logout() {
 
@@ -38,8 +35,6 @@ async function logout() {
     
   } catch (error) {console.error("Logout failed:", error);}
 }
-
-// LOGIN FUNCTION
 
 async function login() {
 
@@ -60,38 +55,7 @@ async function login() {
     isLoggedIn.value = true;
     update();
 
-  } catch (error) {
-    console.error("Login failed:", error);
-  }
-}
-
-// FUNCTION FOR MANAGE WEEKS
-
-function clear() { events = ref(''); freeTimes = []; }
-
-function update() {
-
-  clear();
-
-  numdays = getNumDays();
-
-  month = ref(moment.tz(timezone).add(week, "weeks").format("MMMM YYYY").toUpperCase());
-
-  fetchBusyTimes();
-}
-
-function getNumDays() {
-
-  let startOfWeek = moment.tz(timezone).add(week, "weeks").startOf("week");
-
-  let weekDaysNumbers = [];
-
-  for (let i = 0; i < 7; i++) {
-    let dayNumber = startOfWeek.clone().add(i, "days").date();
-    weekDaysNumbers.push(dayNumber);
-  }
-
-  return weekDaysNumbers;
+  } catch (error) {console.error("Login failed:", error);}
 }
 
 // REQUEST ALL CALENDAR ID AND INFORMATIONS
@@ -134,7 +98,7 @@ async function fetchBusyTimes() {
 // CONVERT BUSYTIMES TO BOOLEAN CALENDAR MATRIX
 
 function getBusyTimeMatrix(busyTimes) {
-  
+
   const tableMatrix = Array.from({ length: 7 }, () => Array(24).fill(false));
 
   calendars.forEach(checkbox => {
@@ -143,110 +107,108 @@ function getBusyTimeMatrix(busyTimes) {
 
       busyTimes[checkbox.id].busy.forEach(busyPeriod => {
 
-        const start = new Date(busyPeriod.start);
-        const end = new Date(busyPeriod.end);
+        const s = new Date(busyPeriod.start);
+        const e = new Date(busyPeriod.end);
 
-        let day = start.getDay() - 1;
-        day = day < 0 ? 6 : day;
+        let d = start.getDay() - 1; d = d < 0 ? 6 : d;
 
-        for (let hour = start.getHours(); hour < end.getHours(); hour++) {
-          tableMatrix[day][hour] = true;
-        }
+        for (let i = s.getHours(); i < e.getHours(); i++) 
+        { tableMatrix[d][i] = true; }
       });
     }
   }); return tableMatrix;
 }
 
-// DISPLAY FROM MATRIX BUSY TIMES ON A TABLE
+// DISPLAY FROM BOOLEAN MATRIX BUSY TIMES ON A TABLE
 
 function displayTable(busyTimes) {
-  
+
   const tableMatrix = getBusyTimeMatrix(busyTimes);
   table.value = [];
 
   for (let row = 0; row < 24; row++) {
+
     const tableRow = [];
+    
     for (let col = 0; col < 7; col++) {
+      
       const isBusy = tableMatrix[col][row];
       tableRow.push({ isBusy });
     }
+
     table.value.push(tableRow);
   }
 }
 
-// MANAGER USER'S CLICK
+/*--------------------------------------------------------------------------------------------------------------*/
 
-function check(rowIndex, cellIndex) {
-  toggleSelection(rowIndex, cellIndex);
-  generateEventHtml();
+
+function clear() { events = ref(''); freeTimes = []; }
+
+function update() {
+
+  clear();
+
+  numdays = getNumDays();
+
+  month = ref(moment.tz(timezone).add(week, "weeks").format("MMMM YYYY").toUpperCase());
+
+  fetchBusyTimes();
 }
 
-// CONVERT USER'S CLICK TO LIST OF POSITIONS
+function getNumDays() {
+
+  let startWeek = moment.tz(timezone).add(week, "weeks").startOf("week");
+
+  let numbers = [];
+
+  for (let i = 0; i < 7; i++) { numbers.push(startWeek.clone().add(i, "days").date()); }
+
+  return numbers;
+}
+
+/*--------------------------------------------------------------------------------------------------------------*/
 
 var freeTimes = []; let drag = false;
 
-function down(rowIndex, cellIndex) {
-  drag = true; toggleSelection(rowIndex, cellIndex);
+// CONVERT USER'S MOUSE EVENTS TO LIST OF POSITIONS
+
+function toFreeTimes(row, col) {
+
+  table.value[row][col].isSelected = !table.value[row][col].isSelected;
+
+  const index = freeTimes.findIndex(pair => pair[0] === row && pair[1] === col);
+
+  if (index === -1) { freeTimes.push([row, col]); } 
+
+  else { freeTimes.splice(index, 1); }
+
+  console.log(freeTimes)
+
 }
 
-function move(rowIndex, cellIndex) {
-  if(drag) {
+function mousedown(row, col) { toFreeTimes(row, col); drag = true; }
 
-    if (!table.value[rowIndex][cellIndex].isSelected) {
-      table.value[rowIndex][cellIndex].isSelected = true;
+function mouseup() { generateDayEvents(); drag = false; }
 
-      const index = freeTimes.findIndex(pair => pair[0] === rowIndex && pair[1] === cellIndex);
-      if (index === -1) {
-        freeTimes.push([rowIndex, cellIndex]);
-      }
-    }
-  }
-}
-
-function up() {
-  drag = false; generateEventHtml();
-}
-
-
-function toggleSelection(rowIndex, cellIndex) {
-
-  table.value[rowIndex][cellIndex].isSelected = !table.value[rowIndex][cellIndex].isSelected;
-
-  const index = freeTimes.findIndex(pair => pair[0] === rowIndex && pair[1] === cellIndex);
-
-  if (index === -1) {
-    if (table.value[rowIndex][cellIndex].isSelected) {
-      freeTimes.push([rowIndex, cellIndex]);}
-  } else {
-    freeTimes.splice(index, 1);
-  }
-}
+/*--------------------------------------------------------------------------------------------------------------*/
 
 // CONVERT LIST OF POSITIONS TO HTML ELEMENTS 
 
-function generateEventHtml() {
+function generateDayEvents() {
 
-  let html = '<div class="ui relaxed divided list">';
-  let i = 0;
+  events.value = {};
 
-  while (i < freeTimes.length) {
+  freeTimes.forEach(([row, col]) => {
 
-    let before = freeTimes[i][1]; 
+    const da = days[col];
 
-    html += `<div class="item content">
-    <div class="header" style="margin-bottom: 0.5em">${days[freeTimes[i][1]]} ${numdays[freeTimes[i][1]]}</div>`;
+    if (!events.value[da]) { events.value[da] = []; }
 
-    while (i < freeTimes.length && freeTimes[i][1] == before) {
-      html += `<div class="description" style="margin: 0.25em">from ${freeTimes[i][0]}:00 to ${freeTimes[i][0] + 1}:00</div>`; i++;
-    }
-      
-    html += `</div>`;
-    
-  }
+    events.value[da].push(row);
+  });
 
-  html += '</div>';
-
-  events.value = html;
+  console.log(events.value);
 }
 
 // DOWNLOAD LIST OF EVENTS CLICKED BY USER
@@ -298,9 +260,16 @@ function download() {
       </div>
 
       <!-- BUSY EVENTS LIST OF CALENDARS -->
-      <div v-html="events" class="ui segment" style="overflow-y: scroll; height: 45.4vh;"></div>
+      <div class="ui segment" style="overflow-y: scroll; height: 45.4vh;">
+        <div v-for="(times, day) in events" class="item content">
+          <div class="header" style="margin-bottom: 0.5em">{{ day }}</div>
+          <ul>
+            <li v-for="time in times" class="description" style="margin: 0.25em"> {{ time }}:00 </li>
+          </ul>
+        </div>
+      </div>
 
-    </div>
+    </div> 
 
     <div class="twelve wide column">
 
@@ -309,11 +278,11 @@ function download() {
 
         <!-- INFORMATION AND NAVIGATION-->
         <div class="ui" style="display: flex">
-
+          
           <button class="ui icon button" @click="week--;update();">
             <i class="angle double left icon"></i>
           </button>
-          <button class="fluid ui button"><p v-html="month"></p></button>
+          <button class="fluid ui button">{{  month }}</button>
           <button class="ui icon button" @click="week++;update();">
             <i class="angle double right icon"></i>
           </button>
@@ -333,9 +302,8 @@ function download() {
             <tr v-for="(row, rowIndex) in table" :key="`row-${rowIndex}`">
               <td class="collapsing" style="background-color: white; font-size: 0.5em; font-weight: 100; text-align: center; ">{{ rowIndex }}</td>
               <td 
-                  @mousedown="down(rowIndex, cellIndex)"
-                  @mousemove="move(rowIndex, cellIndex)"
-                  @mouseup="up()"
+                  @mousedown="mousedown(rowIndex, cellIndex)"
+                  @mouseup="mouseup()"
                   v-for="(cell, cellIndex) in row"
                   :key="`cell-${rowIndex}-${cellIndex}`"
                   :class="{'busy': cell.isBusy, 'selected': cell.isSelected}"
